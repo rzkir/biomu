@@ -397,7 +397,58 @@ func (h *Handler) docToUserResponse(doc *firestore.DocumentSnapshot) map[string]
 	return out
 }
 
-// POST /api/auth/session — set session cookie from idToken
+// oauthProviderFromClaims returns "google", "github", or "email" from Firebase ID token claims.
+func oauthProviderFromClaims(claims map[string]interface{}) string {
+	fb, _ := claims["firebase"].(map[string]interface{})
+	if fb == nil {
+		return "email"
+	}
+	signInProvider, _ := fb["sign_in_provider"].(string)
+	switch signInProvider {
+	case "google.com":
+		return "google"
+	case "github.com":
+		return "github"
+	default:
+		return "email"
+	}
+}
+
+// ensureOAuthAccount creates or updates Firestore account for OAuth user (uid = Firebase UID).
+func (h *Handler) ensureOAuthAccount(ctx context.Context, uid, email, name, picture, provider string) error {
+	docRef := h.fb.DB.Collection(h.accountsColl).Doc(uid)
+	doc, err := docRef.Get(ctx)
+	if err == nil && doc.Exists() {
+		data := doc.Data()
+		if _, hasRole := data["role"]; hasRole {
+			return nil
+		}
+	}
+	now := time.Now()
+	payload := map[string]interface{}{
+		"email":     strings.ToLower(strings.TrimSpace(email)),
+		"provider":  provider,
+		"role":      "user",
+		"status":    "reguler",
+		"createdAt": now,
+		"updatedAt": now,
+	}
+	if name != "" {
+		payload["displayName"] = name
+	}
+	if picture != "" {
+		payload["image"] = picture
+	}
+	exists := err == nil && doc != nil && doc.Exists()
+	if exists {
+		_, err = docRef.Update(ctx, payload)
+	} else {
+		_, err = docRef.Set(ctx, payload)
+	}
+	return err
+}
+
+// POST /api/auth/session — set session cookie from idToken (email OTP or OAuth Google/GitHub)
 func (h *Handler) Session(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
@@ -411,11 +462,22 @@ func (h *Handler) Session(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
-	_, err := h.fb.Auth.VerifyIDToken(ctx, body.IDToken)
+	tok, err := h.fb.Auth.VerifyIDToken(ctx, body.IDToken)
 	if err != nil {
 		log.Printf("session verify id token: %v", err)
 		h.writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create session"})
 		return
+	}
+	provider := oauthProviderFromClaims(tok.Claims)
+	if provider != "email" {
+		email, _ := tok.Claims["email"].(string)
+		name, _ := tok.Claims["name"].(string)
+		picture, _ := tok.Claims["picture"].(string)
+		if err := h.ensureOAuthAccount(ctx, tok.UID, email, name, picture, provider); err != nil {
+			log.Printf("session ensure oauth account: %v", err)
+			h.writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "Failed to create session"})
+			return
+		}
 	}
 	sessionCookie, err := h.fb.Auth.SessionCookie(ctx, body.IDToken, h.sessionExpiry)
 	if err != nil {

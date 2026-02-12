@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"biomu/backend/internal/auth"
@@ -93,13 +94,21 @@ func main() {
 
 // corsMiddleware wraps the handler to add CORS headers and handle OPTIONS (preflight) for all routes.
 // Without this, OPTIONS requests hit no route and return 404 without CORS headers, causing browser CORS errors.
+// CORS_ORIGIN can be a single origin or comma-separated list (e.g. "http://localhost:3000,https://biomu.rizkiramadhan.web.id").
 func corsMiddleware(next http.Handler) http.Handler {
-	allowedOrigin := os.Getenv("CORS_ORIGIN")
-	if allowedOrigin == "" {
-		allowedOrigin = "http://localhost:3000"
+	raw := os.Getenv("CORS_ORIGIN")
+	allowedOrigins := make(map[string]bool)
+	for _, o := range strings.Split(raw, ",") {
+		o = strings.TrimSpace(o)
+		if o != "" {
+			allowedOrigins[o] = true
+		}
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		origin := r.Header.Get("Origin")
+		if allowedOrigins[origin] {
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+		}
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")

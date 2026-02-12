@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { apiUrl } from '@/lib/api';
+import { getFirebaseAuth, googleProvider, githubProvider } from '@/lib/firebase';
+import { signInWithPopup } from 'firebase/auth';
 import React from 'react';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -79,6 +81,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             throw error;
         }
     };
+
+    const signInWithOAuth = async (provider: typeof googleProvider | typeof githubProvider, label: string) => {
+        try {
+            const auth = getFirebaseAuth();
+            if (!auth) {
+                toast.error('Firebase belum dikonfigurasi. Set NEXT_PUBLIC_FIREBASE_* di .env.local');
+                return;
+            }
+            const result = await signInWithPopup(auth, provider);
+            const idToken = await result.user.getIdToken();
+            const res = await fetch(apiUrl('/api/auth/session'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({ idToken }),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error((data as { error?: string }).error || 'Gagal membuat session');
+            }
+            const sessionRes = await fetch(apiUrl('/api/auth/session'), { credentials: 'include' });
+            const sessionData = await sessionRes.json();
+            if (sessionData.authenticated && sessionData.user) {
+                setUser(normalizeUser(sessionData.user));
+            }
+            toast.success(`Login dengan ${label} berhasil`);
+            const role = sessionData.user?.role;
+            router.push(role === 'admin' ? '/dashboard' : '/profile');
+        } catch (err: unknown) {
+            const code = (err as { code?: string })?.code;
+            if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+                return;
+            }
+            if (err instanceof Error) {
+                toast.error(err.message);
+            } else {
+                toast.error(`Gagal login dengan ${label}`);
+            }
+        }
+    };
+
+    const signInWithGoogle = () => signInWithOAuth(googleProvider, 'Google');
+    const signInWithGithub = () => signInWithOAuth(githubProvider, 'GitHub');
 
     const logout = async () => {
         try {
@@ -270,6 +315,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         login,
+        signInWithGoogle,
+        signInWithGithub,
         logout,
         deleteAccount,
         getDashboardUrl,

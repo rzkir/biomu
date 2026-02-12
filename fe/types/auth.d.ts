@@ -18,6 +18,8 @@ interface AuthContextType {
     user: UserAccount | null;
     loading: boolean;
     login: (email: string) => Promise<void>;
+    signInWithGoogle: () => Promise<void>;
+    signInWithGithub: () => Promise<void>;
     logout: () => Promise<void>;
     deleteAccount: () => Promise<void>;
     getDashboardUrl: () => string;

@@ -5,8 +5,10 @@ Ini adalah **frontend only** (Next.js) untuk Biomu. Backend API berjalan terpisa
 Di `.env.local` set:
 
 - `NEXT_PUBLIC_API_URL` — URL backend Go (contoh: `http://localhost:8080`)
-- `NEXT_PUBLIC_FIREBASE_*` — konfigurasi Firebase client (auth, firestore)
-- `NEXT_PUBLIC_COLLECTIONS_ACCOUNTS` — nama koleksi Firestore untuk akun
+- `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_PROJECT_ID`, `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`, `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`, `NEXT_PUBLIC_FIREBASE_APP_ID` — untuk login Google/GitHub (dari Firebase Console → Project settings → Your apps)
+- `NEXT_PUBLIC_COLLECTIONS_ACCOUNTS` — (opsional) nama koleksi Firestore untuk akun
+
+Aktifkan provider **Google** dan **GitHub** di Firebase Console → Authentication → Sign-in method.
 
 Tanpa `NEXT_PUBLIC_API_URL`, request API akan mengarah ke same-origin (pastikan ada proxy atau backend di origin yang sama).
 

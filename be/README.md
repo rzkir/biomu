@@ -21,7 +21,7 @@ API backend untuk auth: verifikasi OTP, signup, login, session cookie. Frontend 
 | `EMAIL_PASS_ADMIN` | Opsional | Password/App password email |
 | `EMAIL_SERVICE` | Opsional | Mis. `gmail`, `outlook` |
 | `PORT` | Opsional | Default `8080` |
-| `CORS_ORIGIN` | Opsional | Default `http://localhost:3000` |
+| `CORS_ORIGIN` | Opsional | Satu origin atau dipisah koma, mis. `http://localhost:3000,https://biomu.rizkiramadhan.web.id`. Default `http://localhost:3000` |
 
 \* Jika tidak pakai `GOOGLE_APPLICATION_CREDENTIALS`, wajib set env Firebase (project ID, client email, private key).
 
