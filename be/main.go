@@ -92,23 +92,18 @@ func main() {
 	}
 }
 
-// corsMiddleware wraps the handler to add CORS headers and handle OPTIONS (preflight) for all routes.
-// Without this, OPTIONS requests hit no route and return 404 without CORS headers, causing browser CORS errors.
-// CORS_ORIGIN can be a single origin or comma-separated list (e.g. "http://localhost:3000,https://biomu.rizkiramadhan.web.id").
 func corsMiddleware(next http.Handler) http.Handler {
-	raw := os.Getenv("CORS_ORIGIN")
-	allowedOrigins := make(map[string]bool)
-	for _, o := range strings.Split(raw, ",") {
-		o = strings.TrimSpace(o)
-		if o != "" {
-			allowedOrigins[o] = true
-		}
+	// CORS_ORIGIN berisi S A T U origin saja (mis. "http://localhost:3000" atau "https://biomu.rizkiramadhan.web.id").
+	// Nilai ini akan selalu dipakai sebagai Access-Control-Allow-Origin, tanpa parsing list.
+	originEnv := strings.TrimSpace(os.Getenv("CORS_ORIGIN"))
+	if originEnv == "" {
+		// Default dev origin jika env belum di-set di lokal.
+		originEnv = "http://localhost:3000"
 	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
-		if allowedOrigins[origin] {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-		}
+		// Selalu pakai satu origin dari env.
+		w.Header().Set("Access-Control-Allow-Origin", originEnv)
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
