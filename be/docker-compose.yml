@@ -14,7 +14,9 @@ services:
       - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
       - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
       - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
-      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-/app/firebase-credentials.json}
+      # Optional: if you want to use a service account JSON file instead of FIREBASE_* env vars,
+      # set GOOGLE_APPLICATION_CREDENTIALS in your host/.env and mount the file via volumes below.
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
       
       # Email Configuration (Optional)
       - EMAIL_ADMIN=${EMAIL_ADMIN}
@@ -26,7 +28,7 @@ services:
       - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
       - SESSION_SECRET=${SESSION_SECRET}
     
-    # Mount Firebase credentials file if using GOOGLE_APPLICATION_CREDENTIALS
+    # Mount Firebase credentials file if using GOOGLE_APPLICATION_CREDENTIALS and a JSON file:
     # volumes:
     #   - ./firebase-credentials.json:/app/firebase-credentials.json:ro
     
