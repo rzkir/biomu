@@ -441,7 +441,11 @@ func (h *Handler) ensureOAuthAccount(ctx context.Context, uid, email, name, pict
 	}
 	exists := err == nil && doc != nil && doc.Exists()
 	if exists {
-		_, err = docRef.Update(ctx, payload)
+		updates := make([]firestore.Update, 0, len(payload))
+		for path, value := range payload {
+			updates = append(updates, firestore.Update{Path: path, Value: value})
+		}
+		_, err = docRef.Update(ctx, updates)
 	} else {
 		_, err = docRef.Set(ctx, payload)
 	}

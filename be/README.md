@@ -27,6 +27,8 @@ API backend untuk auth: verifikasi OTP, signup, login, session cookie. Frontend 
 
 ## Menjalankan
 
+### Menggunakan Go Langsung
+
 ```bash
 # Dari folder backend
 go run .
@@ -35,6 +37,55 @@ go run .
 go build -o biomu-backend .
 ./biomu-backend
 ```
+
+### Menggunakan Docker
+
+#### Build dan Run dengan Docker
+
+```bash
+# Build image
+docker build -t biomu-backend .
+
+# Run container
+docker run -d \
+  --name biomu-backend \
+  -p 8080:8080 \
+  -e COLLECTION_ACCOUNTS=accounts \
+  -e FIREBASE_PROJECT_ID=your-project-id \
+  -e FIREBASE_CLIENT_EMAIL=your-client-email \
+  -e FIREBASE_PRIVATE_KEY="your-private-key" \
+  -e CORS_ORIGIN=http://localhost:3000 \
+  biomu-backend
+```
+
+#### Menggunakan Docker Compose
+
+1. Buat file `.env` di folder `be/` dengan variabel environment yang diperlukan:
+
+```bash
+COLLECTION_ACCOUNTS=accounts
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_CLIENT_EMAIL=your-client-email
+FIREBASE_PRIVATE_KEY="your-private-key"
+CORS_ORIGIN=http://localhost:3000
+PORT=8080
+SESSION_SECRET=your-session-secret
+```
+
+2. Jalankan dengan docker-compose:
+
+```bash
+# Dari folder backend
+docker-compose up -d
+
+# Atau untuk melihat logs
+docker-compose up
+
+# Stop container
+docker-compose down
+```
+
+**Catatan:** Jika menggunakan `GOOGLE_APPLICATION_CREDENTIALS`, uncomment bagian `volumes` di `docker-compose.yml` dan mount file credentials Firebase Anda.
 
 Pastikan frontend Next.js di `fe/` punya `NEXT_PUBLIC_API_URL=http://localhost:8080` (atau URL backend Anda).
 

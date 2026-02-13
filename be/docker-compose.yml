@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: biomu-backend
+    ports:
+      - "8080:8080"
+    environment:
+      # Firebase Configuration
+      - COLLECTION_ACCOUNTS=${COLLECTION_ACCOUNTS:-accounts}
+      - FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID}
+      - FIREBASE_CLIENT_EMAIL=${FIREBASE_CLIENT_EMAIL}
+      - FIREBASE_PRIVATE_KEY=${FIREBASE_PRIVATE_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS:-/app/firebase-credentials.json}
+      
+      # Email Configuration (Optional)
+      - EMAIL_ADMIN=${EMAIL_ADMIN}
+      - EMAIL_PASS_ADMIN=${EMAIL_PASS_ADMIN}
+      - EMAIL_SERVICE=${EMAIL_SERVICE:-gmail}
+      
+      # Server Configuration
+      - PORT=${PORT:-8080}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - SESSION_SECRET=${SESSION_SECRET}
+    
+    # Mount Firebase credentials file if using GOOGLE_APPLICATION_CREDENTIALS
+    # volumes:
+    #   - ./firebase-credentials.json:/app/firebase-credentials.json:ro
+    
+    restart: unless-stopped
+    networks:
+      - biomu-network
+
+networks:
+  biomu-network:
+    driver: bridge
